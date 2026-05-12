@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Nails - Cloud SaaS Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+:root { --primary: #3b82f6; --primary-dark: #2563eb; --primary-light: rgba(59,130,246,0.15); --success: #22c55e; --danger: #ef4444; --warning: #eab308; --gold: #f59e0b; --secondary: #06b6d4; --bg-dark: #0c1222; --bg-darker: #070d18; --bg-card: rgba(15, 23, 42, 0.95); --bg-input: rgba(30, 41, 59, 0.8); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border-color: rgba(59, 130, 246, 0.25); --border-light: rgba(148, 163, 184, 0.15); }
+* { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: 'Inter', sans-serif; background: var(--bg-darker); color: var(--text-primary); min-height: 100vh; display: flex; }
+::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--bg-dark); } ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 5px; }
+.sidebar { width: 260px; background: linear-gradient(180deg, var(--bg-dark), var(--bg-darker)); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; z-index: 100; border-right: 1px solid var(--border-color); }
+.sidebar-header { padding: 20px 18px; text-align: center; border-bottom: 1px solid var(--border-color); }
+.sidebar-logo { width: 70px; height: 70px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 3px solid var(--gold); padding: 3px; background: #fff; } .sidebar-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+.sidebar-brand { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--gold); } .sidebar-tagline { font-size: 0.55rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+.sidebar nav { flex: 1; padding: 10px 0; overflow-y: auto; } .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--text-secondary); text-decoration: none; font-size: 0.8rem; font-weight: 500; border-left: 3px solid transparent; cursor: pointer; transition: 0.2s; } .sidebar nav a:hover { background: var(--primary-light); color: var(--text-primary); border-left-color: var(--primary); } .sidebar nav a.active { background: var(--primary-light); color: var(--text-primary); border-left-color: var(--primary); font-weight: 600; }
+.sidebar-footer { padding: 12px; border-top: 1px solid var(--border-color); text-align: center; } .role-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 6px; } .role-admin { background: rgba(139,92,246,0.2); color: #a78bfa; } .role-staff { background: rgba(6,182,212,0.2); color: var(--secondary); }
+.main-content { margin-left: 260px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; } .header { background: var(--bg-card); padding: 14px 28px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; } .header h1 { font-family: 'Playfair Display', serif; font-size: 1.1rem; } .content-area { padding: 24px; flex: 1; }
+.page { display: none; animation: fadeIn 0.3s ease; } .page.active { display: block; } @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 17px; border-radius: 8px; border: none; font-family: 'Inter'; font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: 0.2s; } .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); } .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; } .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; } .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; } .btn-warning { background: linear-gradient(135deg, #eab308, #ca8a04); color: #000; } .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; } .btn-outline { background: transparent; border: 1.5px solid var(--border-color); color: var(--text-secondary); } .btn-sm { padding: 5px 11px; font-size: 0.72rem; } .btn-block { width: 100%; justify-content: center; }
+input, select, textarea { width: 100%; padding: 10px 13px; border: 1.5px solid var(--border-color); border-radius: 8px; font-family: 'Inter'; font-size: 0.87rem; color: var(--text-primary); background: var(--bg-input); } input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+label { display: block; font-size: 0.73rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; text-transform: uppercase; } .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; margin-bottom: 18px; } .card h3 { font-size: 0.95rem; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-light); }
+table { width: 100%; border-collapse: collapse; } th, td { padding: 11px 13px; text-align: left; border-bottom: 1px solid var(--border-light); font-size: 0.84rem; } th { background: rgba(59,130,246,0.1); font-weight: 600; color: var(--primary); font-size: 0.75rem; text-transform: uppercase; } tbody tr:hover { background: var(--primary-light); }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; } .badge-gold { background: rgba(245,158,11,0.15); color: #fbbf24; } .badge-primary { background: var(--primary-light); color: #60a5fa; } .badge-success { background: rgba(34,197,94,0.15); color: #4ade80; } .badge-danger { background: rgba(239,68,68,0.15); color: #f87171; } .badge-warning { background: rgba(234,179,8,0.15); color: #fbbf24; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 22px; } .kpi-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; position: relative; overflow: hidden; } .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(to bottom, var(--primary), #06b6d4); } .kpi-label { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 6px; } .kpi-value { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(7,13,24,0.85); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; } .modal-overlay.show { display: flex; } .modal-box { background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 750px; max-height: 90vh; overflow-y: auto; animation: modalIn 0.25s ease; } @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } } .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; } .modal-header h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; } .modal-body { padding: 22px; } .modal-footer { padding: 16px 22px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; flex-wrap:wrap; }
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--bg-darker), var(--bg-dark)); } .login-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; padding: 40px 34px; width: 100%; max-width: 450px; text-align: center; } .login-card img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--gold); padding: 4px; margin-bottom: 16px; background: #fff; }
+.menu-toggle { display: none; background: var(--bg-card); border: 1.5px solid var(--border-color); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; color: var(--text-primary); }
+@media(max-width:768px){ .sidebar{transform:translateX(-100%);} .sidebar.open{transform:translateX(0);} .main-content{margin-left:0;} .menu-toggle{display:inline-flex;} .form-row{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><div class="sidebar-logo"><img src="https://i.postimg.cc/ZY2STJjs/IMG-3091.png" alt="Logo"></div><div class="sidebar-brand" id="sidebarBrand">DELIVERY NAILS</div><p class="sidebar-tagline">Sistema Cloud</p></div>
+  <nav id="navMenu"></nav>
+  <div class="sidebar-footer">
+    <span id="roleBadge" class="role-badge role-admin">👑 Gestor</span><br>
+    <span id="userNameDisplay" style="font-size:0.75rem;color:var(--text-muted);"></span><br>
+    <button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="openChangePassModal()">🔑 Alterar Senha</button>
+    <button class="btn btn-danger btn-block" style="margin-top:6px;" onclick="doLogout()">🚪 Sair</button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="header"><div style="display:flex;align-items:center;gap:12px;"><button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 id="pageTitle">Dashboard</h1></div></header>
+  <div class="content-area">
+    <section id="pgDashboard" class="page active"><div class="kpi-grid" id="dashKpis"></div><div class="card"><h3>📋 Actividade Recente</h3><div id="recentAct" style="max-height:300px;overflow-y:auto;"></div></div></section>
+    <section id="pgBranches" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--primary);">🏛️ Filiais</h2><button class="btn btn-primary" onclick="openBranchModal()">➕ Nova Filial</button></div><div class="card"><table><thead><tr><th>Nome</th><th>Morada</th><th>Ações</th></tr></thead><tbody id="brTb"></tbody></table></div></section>
+    <section id="pgClients" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--primary);">👥 Clientes</h2><div style="display:flex;gap:10px;"><input type="text" id="srcCl" placeholder="🔍 Pesquisar..." style="width:200px;"><button class="btn btn-warning btn-sm" onclick="openTrashCli()">🗑️ Lixeira</button><button class="btn btn-primary" onclick="openCliModal()">➕ Novo</button></div></div><div class="card"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Filial</th><th>Ações</th></tr></thead><tbody id="clTb"></tbody></table></div></section>
+    <section id="pgProducts" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--primary);">📦 Produtos & Preços</h2><button class="btn btn-primary" onclick="openProducModal()">➕ Novo</button></div><div class="card"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Ações</th></tr></thead><tbody id="prTb"></tbody></table></div></section>
+    <section id="pgPros" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--primary);">👩‍🎨 Funcionárias</h2><button class="btn btn-primary" onclick="openProModal()">➕ Nova</button></div><div class="card"><table><thead><tr><th>Nome</th><th>Filial</th><th>Login</th><th>Comissão</th><th>Ações</th></tr></thead><tbody id="proTb"></tbody></table></div></section>
+    <section id="pgSales" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--primary);">🧾 Vendas</h2><button class="btn btn-success" onclick="openSaleModal()">➕ Nova Venda</button></div><div class="card"><table><thead><tr><th>Fatura</th><th>Data</th><th>Cliente</th><th>Total</th><th>Ações</th></tr></thead><tbody id="slTb"></tbody></table></div></section>
+    <section id="pgProformas" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--secondary);">📄 Proformas</h2><button class="btn btn-primary" onclick="openProformaModal()">➕ Nova</button></div><div class="card"><table><thead><tr><th>Nº Proforma</th><th>Cliente</th><th>Total</th><th>Ações</th></tr></thead><tbody id="pfTb"></tbody></table></div></section>
+    <section id="pgReceivables" class="page"><h2 style="font-family:'Playfair Display';color:var(--warning);margin-bottom:18px;">💳 A Receber</h2><div class="card"><table><thead><tr><th>Cliente</th><th>Total</th><th>Pago</th><th>Saldo</th><th>Ações</th></tr></thead><tbody id="dbTb"></tbody></table></div></section>
+    <section id="pgPayables" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--danger);">💸 A Pagar</h2><button class="btn btn-danger" onclick="openExpModal()">➕ Despesa</button></div><div class="card"><table><thead><tr><th>Tipo</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody id="exTb"></tbody></table></div></section>
+    <section id="pgPayroll" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--success);">💰 Folha Salarial</h2><div style="display:flex;gap:10px;align-items:end;"><div><label>Mês</label><input type="month" id="payMonth"></div><button class="btn btn-success" onclick="loadPayroll()">Calcular</button></div></div><div id="payOut" class="card"></div></section>
+    <section id="pgReports" class="page"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;"><h2 style="font-family:'Playfair Display';color:var(--primary);">📈 Relatórios</h2><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;"><div><label>Início</label><input type="date" id="repStart"></div><div><label>Fim</label><input type="date" id="repEnd"></div><button class="btn btn-primary" onclick="generateReport()">Gerar</button></div></div><div id="repOut" class="card"></div></section>
+    <section id="pgConfig" class="page"><h2 style="font-family:'Playfair Display';color:var(--primary);margin-bottom:18px;">⚙️ Configurações</h2><div class="card"><h3>Dados da Empresa</h3><div class="form-row"><div><label>Nome</label><input type="text" id="cfgName"></div><div><label>NIF</label><input type="text" id="cfgNif"></div></div><div class="form-row"><div><label>Express</label><input type="text" id="cfgExp"></div><div><label>WhatsApp</label><input type="text" id="cfgWapp"></div></div><div class="form-row"><div><label>IBAN</label><input type="text" id="cfgIban"></div><div><label>Endereço</label><input type="text" id="cfgAddr"></div></div><div class="form-row"><div><label>IVA (%)</label><input type="number" id="cfgIva"></div><div><label>Métodos Pagamento (vírgula)</label><input type="text" id="cfgMeth"></div></div><button class="btn btn-success" onclick="saveCfg()">💾 Salvar</button></div><div class="card" style="margin-top:20px;"><h3>👥 Gestão de Usuários e Acessos</h3><div id="userListCfg"></div></div></section>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modOv"><div class="modal-box"><div class="modal-header"><h2 id="modTit">Título</h2><button class="btn btn-outline btn-sm" onclick="closeMod()">✕</button></div><div class="modal-body" id="modBod"></div><div class="modal-footer" id="modFoot"></div></div></div>
+
+<script>
+const SUPABASE_URL = 'https://mgyolaqbkejqnmupqynv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1neW9sYXFia2VqcW5tdXBxeW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzQwNzQsImV4cCI6MjA5NDE1MDA3NH0.mBp8ZjHC6mBMS9288_W1j4x5hh458dW_a8I6WOWIDNQ';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const LOGO = 'https://i.postimg.cc/ZY2STJjs/IMG-3091.png';
+const SESSION_TIMEOUT = 28800000; // 8 horas em milissegundos
+
+const defaultProducts = [
+  {name:'Base Normal (Mão)',category:'Mão - Básicos',price:3000,stock:999},{name:'Base de Gelinho',category:'Mão - Básicos',price:3500,stock:999},{name:'Pintura na Unha',category:'Mão - Básicos',price:4500,stock:999},{name:'Aplicação Gelinho',category:'Mão - Básicos',price:6000,stock:999},
+  {name:'Gel na Unha',category:'Mão - Gel',price:7000,stock:150},{name:'Aplicação de Gel',category:'Mão - Gel',price:8000,stock:120},{name:'Alongamento de Gel',category:'Mão - Gel',price:10000,stock:80},{name:'Manutenção de Gel',category:'Mão - Gel',price:6000,stock:100},
+  {name:'Porcelana na Unha',category:'Mão - Porcelana',price:8000,stock:100},{name:'Aplicação de Porcelana',category:'Mão - Porcelana',price:9000,stock:80},{name:'Porcelana Uma Cor',category:'Mão - Porcelana',price:9000,stock:80},{name:'Porcelana Duas Cores',category:'Mão - Porcelana',price:9500,stock:60},{name:'Alongamento Porcelana',category:'Mão - Porcelana',price:12000,stock:50},{name:'Manutenção Porcelana',category:'Mão - Porcelana',price:7000,stock:90},
+  {name:'Pedicure Normal',category:'Pés - Pedicure',price:5500,stock:999},{name:'Pedicure Completo',category:'Pés - Pedicure',price:7000,stock:999},{name:'Pedicure com Gel',category:'Pés - Pedicure',price:8500,stock:100},{name:'Pedicure com Porcelana',category:'Pés - Pedicure',price:9500,stock:60},
+  {name:'Base Normal Homem',category:'Homens',price:3000,stock:999},{name:'Pedicure Completa Homem',category:'Homens',price:7500,stock:999}
+];
+
+function hash(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193);}return'hx_'+(h>>>0).toString(16);}
+function today(){return new Date().toISOString().split('T')[0];} function fmt(n){return new Intl.NumberFormat('pt-AO',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);} function fmtD(d){if(!d)return'-';return d.split('-').reverse().join('/');}
+function $(id){return document.getElementById(id);} function v(id){const el=$(id);return el?el.value.trim():'';}
+
+let currentUser=null; let currentSalon=null; let SID=null;
+
+function applyBranchFilter(query) { if (currentUser.role === 'staff' && currentUser.branch_id) { return query.eq('branch_id', currentUser.branch_id); } return query; }
+function getBranchId() { return currentUser.branch_id || null; }
+
+// --- AUTH SEGURA ---
+function checkAuth(){
+  const s=sessionStorage.getItem('dn_session');
+  if(s){
+    try {
+      const session = JSON.parse(s);
+      // Segurança 1: Verifica expiração de sessão (8 horas)
+      if(Date.now() - session.loginTime > SESSION_TIMEOUT){
+        sessionStorage.removeItem('dn_session');
+        alert('Sessão expirada por segurança. Faça login novamente.');
+        renderLogin(); return;
+      }
+      currentUser = session; SID = currentUser.salon_id; loadApp();
+    } catch(e) {
+      sessionStorage.removeItem('dn_session'); renderLogin();
+    }
+  } else renderLogin();
+}
+
+function renderLogin(){document.body.innerHTML=`<div class="login-page"><div class="login-card"><img src="${LOGO}"><h2>DELIVERY NAILS</h2><p style="color:var(--text-muted);margin-bottom:18px;">Sistema Cloud</p><input type="text" id="lu" placeholder="Usuário" style="margin-bottom:10px;"><input type="password" id="lp" placeholder="Senha"><button class="btn btn-primary btn-block" onclick="doLogin()" style="padding:13px;margin-top:14px;">✨ Entrar</button><hr style="border-color:var(--border-color);margin:20px 0;"><button class="btn btn-gold btn-block" onclick="renderRegister()">🏢 Primeiro Acesso</button></div></div>`;}
+function renderRegister(){document.body.innerHTML=`<div class="login-page"><div class="login-card"><img src="${LOGO}"><h2>Novo Salão</h2><p style="color:var(--text-muted);margin-bottom:18px;">Crie sua conta</p><input type="text" id="rn" placeholder="Nome do Salão" style="margin-bottom:10px;"><input type="text" id="ru" placeholder="Login (Ex: admin)" style="margin-bottom:10px;"><input type="password" id="rp" placeholder="Senha" style="margin-bottom:10px;"><input type="text" id="re" placeholder="Express"><button class="btn btn-primary btn-block" onclick="doRegister()" style="padding:13px;margin-top:14px;">🚀 Criar</button><button class="btn btn-outline btn-block" onclick="renderLogin()" style="margin-top:10px;">Voltar</button></div></div>`;}
+
+async function doRegister(){
+  const name=v('rn'),user=v('ru'),pass=v('rp'),expr=v('re');if(!name||!user||!pass)return alert('Preencha tudo!');
+  const{data:salon,error:e1}=await db.from('salons').insert({name,express:expr}).select().single();if(e1)return alert('Erro: '+e1.message);
+  const{data:branch}=await db.from('branches').insert({salon_id:salon.id,name:'Matriz'}).select().single();
+  await db.from('users').insert({salon_id:salon.id,branch_id:branch?.id,name:'Gestor',username:user,password_hash:hash(pass),role:'admin'});
+  const prods=defaultProducts.map(p=>({...p,salon_id:salon.id}));await db.from('products').insert(prods);
+  alert('✅ Conta criada!');renderLogin();
+}
+
+async function doLogin(){
+  const u=v('lu'),p=v('lp');if(!u||!p)return alert('Preencha!');
+  const{data,error}=await db.from('users').select('*, salons(*)').eq('username',u).eq('password_hash',hash(p)).single();
+  if(error||!data)return alert('Credenciais erradas!');
+  // Segurança 2: Salva timestamp de login
+  data.loginTime = Date.now();
+  currentUser=data;currentSalon=data.salons;SID=data.salon_id;sessionStorage.setItem('dn_session',JSON.stringify(data));location.reload();
+}
+function doLogout(){sessionStorage.removeItem('dn_session');location.reload();}
+
+function openChangePassModal(){
+  openMod('🔑 Alterar Senha',`
+  <div class="form-row"><div><label>Senha Atual</label><input type="password" id="cpOld"></div></div>
+  <div class="form-row"><div><label>Nova Senha</label><input type="password" id="cpNew"></div><div><label>Confirmar Nova Senha</label><input type="password" id="cpConf"></div></div>
+  `,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="changePass()">💾 Salvar</button>`);
+}
+async function changePass(){
+  const old=v('cpOld'),nw=v('cpNew'),conf=v('cpConf');if(!old||!nw)return alert('Preencha os campos!');if(nw!==conf)return alert('As novas senhas não coincidem!');
+  const{data}=await db.from('users').select('*').eq('id',currentUser.id).eq('password_hash',hash(old)).single();if(!data)return alert('Senha atual incorreta!');
+  await db.from('users').update({password_hash:hash(nw)}).eq('id',currentUser.id);alert('✅ Senha alterada com sucesso!');closeMod();
+}
+
+// --- APP ---
+async function loadApp(){
+  // Segurança 3: Confere se conta ainda existe no banco ao carregar
+  const { data: validUser } = await db.from('users').select('id').eq('id', currentUser.id).single();
+  if(!validUser){ doLogout(); return; }
+
+  if(!currentSalon){const{data}=await db.from('salons').select('*').eq('id',SID).single();currentSalon=data;} 
+  $('sidebarBrand').textContent=currentSalon.name||'DELIVERY NAILS';$('userNameDisplay').textContent=currentUser.name;const b=$('roleBadge');if(currentUser.role==='admin'){b.className='role-badge role-admin';b.innerHTML='👑 Gestor';}else{b.className='role-badge role-staff';b.innerHTML='💅 Funcionária';}buildNav();goTo('Dashboard');
+}
+
+function buildNav(){
+  let items = currentUser.role === 'admin' ? 
+    [{id:'Dashboard',icon:'📊',lbl:'Dashboard'},{id:'Branches',icon:'🏛️',lbl:'Filiais'},{id:'Clients',icon:'👥',lbl:'Clientes'},{id:'Products',icon:'📦',lbl:'Produtos'},{id:'Pros',icon:'👩‍🎨',lbl:'Funcionárias'},{id:'Sales',icon:'🧾',lbl:'Vendas'},{id:'Proformas',icon:'📄',lbl:'Proformas'},{id:'Receivables',icon:'💳',lbl:'A Receber'},{id:'Payables',icon:'💸',lbl:'A Pagar'},{id:'Payroll',icon:'💰',lbl:'Folha'},{id:'Reports',icon:'📈',lbl:'Relatórios'},{id:'Config',icon:'⚙️',lbl:'Config'}] : 
+    [{id:'Dashboard',icon:'📊',lbl:'Painel'},{id:'Clients',icon:'👥',lbl:'Clientes'},{id:'Sales',icon:'🧾',lbl:'Vendas'},{id:'Proformas',icon:'📄',lbl:'Proformas'}];
+  $('navMenu').innerHTML=items.map(i=>`<a onclick="goTo('${i.id}')">${i.icon} ${i.lbl}</a>`).join('');
+}
+
+function goTo(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const pg=$('pg'+id);if(pg)pg.classList.add('active');document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));const al=document.querySelector(`.sidebar nav a[onclick*="${id}"]`);if(al)al.classList.add('active');$('pageTitle').textContent=al?al.textContent.trim():'Dashboard';$('sidebar').classList.remove('open');const acts={Dashboard:loadDash,Branches:loadBranches,Clients:loadCli,Products:loadProds,Pros:loadPros,Sales:loadSales,Proformas:loadProformas,Receivables:loadDebts,Payables:loadExps,Payroll:()=>{},Reports:loadReports,Config:loadCfg};if(acts[id])acts[id]();}
+function openMod(t,b,f){$('modTit').textContent=t;$('modBod').innerHTML=b;$('modFoot').innerHTML=f||'';$('modOv').classList.add('show');} function closeMod(){$('modOv').classList.remove('show');}
+
+// --- DASHBOARD ---
+async function loadDash(){const t=today();let querySales = db.from('sales').select('*').eq('salon_id',SID); querySales = applyBranchFilter(querySales); const {data:sales} = await querySales; const sl=sales||[]; const[{data:clients},{data:debts},{data:expenses}]=await Promise.all([db.from('clients').select('*').eq('salon_id',SID).is('deleted_at',null),db.from('debts').select('*').eq('salon_id',SID),db.from('expenses').select('*').eq('salon_id',SID)]);const cl=clients||[],dbt=debts||[],exp=expenses||[];if(currentUser.role==='admin'){$('dashKpis').innerHTML=`<div class="kpi-card"><div class="kpi-label">💰 Faturado Hoje</div><div class="kpi-value">${fmt(sl.filter(s=>s.date===t).reduce((a,b)=>a+b.total,0))} Kz</div></div><div class="kpi-card"><div class="kpi-label">💳 A Receber</div><div class="kpi-value">${fmt(dbt.filter(d=>d.status!=='pago').reduce((a,d)=>a+d.total-d.paid,0))} Kz</div></div><div class="kpi-card"><div class="kpi-label">💸 A Pagar</div><div class="kpi-value">${fmt(exp.filter(e=>e.status!=='pago').reduce((a,e)=>a+e.total-e.paid,0))} Kz</div></div><div class="kpi-card"><div class="kpi-label">👥 Clientes</div><div class="kpi-value">${cl.length}</div></div>`;}else{const my=sl.filter(s=>s.professional_id===currentUser.id);$('dashKpis').innerHTML=`<div class="kpi-card"><div class="kpi-label">🧾 Vendas Hoje</div><div class="kpi-value">${fmt(my.filter(s=>s.date===t).reduce((a,b)=>a+b.total,0))} Kz</div></div>`;}const recent=sl.sort((a,b)=>b.created_at.localeCompare(a.created_at)).slice(0,5);$('recentAct').innerHTML=recent.length?recent.map(s=>`<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border-light);"><span>${fmtD(s.date)}</span><span class="badge badge-gold">${fmt(s.total)} Kz</span></div>`).join(''):'<p style="text-align:center;padding:20px;color:var(--text-muted);">Sem dados</p>';}
+
+// --- FILIAIS ---
+async function loadBranches(){const{data}=await db.from('branches').select('*').eq('salon_id',SID);$('brTb').innerHTML=(data||[]).map(b=>`<tr><td><strong>${b.name}</strong></td><td>${b.address||'-'}</td><td><button class="btn btn-danger btn-sm" onclick="delBranch('${b.id}')">🗑️</button></td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhuma</td></tr>';}
+function openBranchModal(){openMod('➕ Nova Filial',`<div class="form-row"><div><label>Nome *</label><input id="brn"></div><div><label>Morada</label><input id="bra"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="saveBranch()">💾</button>`);}
+async function saveBranch(){const n=v('brn');if(!n)return alert('Nome!');await db.from('branches').insert({salon_id:SID,name:n,address:v('bra')});closeMod();loadBranches();}
+async function delBranch(id){if(!confirm('Excluir?'))return;await db.from('branches').delete().eq('id',id);loadBranches();}
+
+// --- CLIENTES COM LIXEIRA ---
+async function loadCli(){
+  let query = db.from('clients').select('*').eq('salon_id',SID).is('deleted_at',null).order('created_at',{ascending:false});
+  query = applyBranchFilter(query);
+  const {data} = await query; const cl=data||[];const q=(v('srcCl')||'').toLowerCase();const f=q?cl.filter(c=>c.name.toLowerCase().includes(q)):cl;
+  let branchNames={};if(currentUser.role==='admin'){const{data:br}=await db.from('branches').select('*').eq('salon_id',SID);(br||[]).forEach(b=>branchNames[b.id]=b.name);}
+  $('clTb').innerHTML=f.map(c=>`<tr><td><strong>${c.name}</strong></td><td>${c.phone||'-'}</td>${currentUser.role==='admin'?`<td><span class="badge badge-primary">${branchNames[c.branch_id]||'Matriz'}</span></td>`:''}<td><button class="btn btn-success btn-sm" onclick="openSaleModal('${c.id}')">🧾</button> <button class="btn btn-primary btn-sm" onclick="openProformaModal('${c.id}')">📄</button> <button class="btn btn-danger btn-sm" onclick="delCli('${c.id}')">🗑️</button></td></tr>`).join('')||`<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum</td></tr>`;}
+function openCliModal(){openMod('➕ Novo Cliente',`<div class="form-row"><div><label>Nome *</label><input id="cn"></div><div><label>Telefone *</label><input id="cp"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="saveCli()">💾</button>`);}
+async function saveCli(){const n=v('cn'),p=v('cp');if(!n||!p)return alert('Preencha!');await db.from('clients').insert({salon_id:SID,branch_id:getBranchId(),name:n,phone:p});closeMod();loadCli();}
+
+// Lixeira: Ao apagar, apenas marcar a data
+async function delCli(id){if(!confirm('Mover para lixeira?'))return;await db.from('clients').update({deleted_at: new Date().toISOString()}).eq('id',id);loadCli();}
+
+// Modal da Lixeira
+async function openTrashCli(){
+  const { data } = await db.from('clients').select('*').eq('salon_id',SID).not('deleted_at','null');
+  const html = (data||[]).map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td>${c.phone||'-'}</td>
+      <td>${fmtD(c.deleted_at?.split('T')[0])}</td>
+      <td><button class="btn btn-success btn-sm" onclick="restoreCli('${c.id}')">♻️ Restaurar</button></td>
+    </tr>
+  `).join('');
+  openMod('🗑️ Lixeira de Clientes',`
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;">Clientes apagados aparecem aqui. Restaure se precisar.</p>
+    <table><thead><tr><th>Nome</th><th>Telefone</th><th>Apagado em</th><th>Ação</th></tr></thead><tbody>${html || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Lixeira vazia</td></tr>'}</tbody></table>
+  `,`<button class="btn btn-outline" onclick="closeMod()">Fechar</button>`);
+}
+async function restoreCli(id){
+  await db.from('clients').update({deleted_at: null}).eq('id',id);
+  openTrashCli(); loadCli(); // Atualiza as duas telas
+}
+
+// --- PRODUTOS ---
+async function loadProds(){const{data}=await db.from('products').select('*').eq('salon_id',SID);$('prTb').innerHTML=(data||[]).map(p=>`<tr><td><strong>${p.name}</strong></td><td><span class="badge badge-primary">${p.category||'-'}</span></td><td>${fmt(p.price)} Kz</td><td><button class="btn btn-outline btn-sm" onclick="openProducModal('${p.id}')">✏️</button></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum</td></tr>';}
+function openProducModal(pid){const p=pid?1:null;openMod(p?'✏️ Editar':'➕ Novo',`<div class="form-row"><div><label>Nome *</label><input id="pn"></div><div><label>Categoria</label><input id="pcat"></div></div><div class="form-row"><div><label>Preço *</label><input type="number" id="pprice"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="saveProd('${pid||''}')">💾</button>`);}
+async function saveProd(eid){const n=v('pn'),pr=parseFloat(v('pprice'));if(!n||!pr)return alert('Nome e preço!');if(eid){await db.from('products').update({name:n,category:v('pcat'),price:pr}).eq('id',eid);}else{await db.from('products').insert({salon_id:SID,name:n,category:v('pcat'),price:pr});}closeMod();loadProds();}
+
+// --- PROFISSIONAIS ---
+async function loadPros(){const[{data:pr},{data:br}]=await Promise.all([db.from('professionals').select('*').eq('salon_id',SID),db.from('branches').select('*').eq('salon_id',SID)]);$('proTb').innerHTML=(pr||[]).map(p=>{const b=(br||[]).find(x=>x.id===p.branch_id);return`<tr><td><strong>${p.name}</strong></td><td>${b?.name||'-'}</td><td><span class="badge badge-primary">${p.username||'-'}</span></td><td>${p.commission||0}%</td><td><button class="btn btn-danger btn-sm" onclick="delPro('${p.id}')">🗑️</button></td></tr>`;}).join('')||'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhuma</td></tr>';}
+
+async function openProModal(){
+  const { data: branches } = await db.from('branches').select('*').eq('salon_id', SID);
+  const branchOpts = (branches||[]).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  openMod('➕ Nova Funcionária',`
+  <div class="form-row"><div><label>Nome *</label><input id="pron"></div><div><label>Filial</label><select id="probr">${branchOpts}</select></div></div>
+  <div class="form-row"><div><label>Login *</label><input id="prou"></div><div><label>Senha *</label><input type="password" id="prop"></div></div>
+  <div class="form-row"><div><label>Salário Base</label><input type="number" id="prosal" value="0"></div><div><label>Comissão (%)</label><input type="number" id="procom" value="40"></div></div>`,
+  `<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="savePro()">💾</button>`);
+}
+async function savePro(){
+  const n=v('pron'),u=v('prou'),p=v('prop'),c=parseFloat(v('procom'))||0,sal=parseFloat(v('prosal'))||0,branchId=v('probr');
+  if(!n||!u||!p)return alert('Preencha!');
+  const{data:pro, error: err1}=await db.from('professionals').insert({salon_id:SID,branch_id:branchId||null,name:n,username:u,base_salary:sal,commission:c}).select().single();
+  if(err1) return alert('Erro ao salvar Funcionária: '+err1.message);
+  if(pro){const { error: err2 } = await db.from('users').insert({salon_id:SID,branch_id:branchId||null,name:n,username:u,password_hash:hash(p),role:'staff'});if(err2) alert('Aviso: Funcionária salva, mas erro ao criar login: '+err2.message);}
+  closeMod();loadPros();
+}
+async function delPro(id){if(!confirm('Excluir?'))return;await db.from('professionals').delete().eq('id',id);loadPros();}
+
+// --- CARRINHO / VENDAS / PROFORMAS ---
+window.cart=[];window.cartTotal=0;window.cartSub=0;
+function addToCart(id,n,p){const e=window.cart.find(x=>x.id===id);if(e)e.qty++;else window.cart.push({id,name:n,price:p,qty:1});renderCart();}
+function renderCart(){let t=0;$('cartTb').innerHTML=window.cart.map((i,idx)=>{const s=i.price*i.qty;t+=s;return`<tr><td>${i.name}</td><td><input type="number" value="${i.qty}" min="1" style="width:55px;padding:5px;" onchange="window.cart[${idx}].qty=parseInt(this.value)||1;renderCart()"></td><td>${fmt(s)} Kz</td><td><button class="btn btn-danger btn-sm" onclick="window.cart.splice(${idx},1);renderCart()">✕</button></td></tr>`;}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Clique nos serviços</td></tr>';const disc=parseFloat(v('itemDisc'))||0;const iva=parseFloat(v('itemIva'))||0;const base=t-disc;const vI=base*(iva/100);window.cartSub=t;window.cartTotal=base+vI;$('cartTot').textContent=fmt(window.cartTotal)+' Kz';$('cartIva').textContent=fmt(vI)+' Kz';}
+
+async function openSaleModal(cliId){
+  let queryProds = db.from('products').select('*').eq('salon_id',SID);
+  let queryClis = db.from('clients').select('*').eq('salon_id',SID).is('deleted_at',null); // Ignora clientes da lixeira
+  const[{data:pr},{data:cl},{data:pro}]=await Promise.all([queryProds,queryClis,db.from('professionals').select('*').eq('salon_id',SID)]);
+  window.cart=[];window.cartTotal=0;
+  openMod('🧾 Nova Venda',`<div class="form-row"><div><label>Cliente</label><select id="slCl"><option value="">-- CF --</option>${(cl||[]).map(c=>`<option value="${c.id}" ${c.id===cliId?'selected':''}>${c.name}</option>`).join('')}</select></div><div><label>Profissional</label><select id="slPro">${(pro||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div></div><div class="form-row"><div><label>Pagamento</label><select id="slPay"><option value="Dinheiro">💵 Dinheiro</option><option value="Multicaixa Express / TPA">💳 TPA / Express</option><option value="Transferência">🏦 Transferência</option><option value="parcelado">⏳ Parcelar</option></select></div><div><label>IVA (%)</label><input type="number" id="itemIva" value="${currentSalon.iva||0}" oninput="renderCart()"></div></div><div id="tpaRow" style="display:none;margin-bottom:14px;"><label>Cód. Autorização TPA *</label><input type="text" id="slTpaCode" placeholder="Ex: AUTH123456"></div><div style="max-height:120px;overflow-y:auto;border:1px solid var(--border-color);padding:6px;border-radius:8px;margin-bottom:12px;">${(pr||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid var(--border-light);cursor:pointer;" onclick="addToCart('${p.id}','${p.name.replace(/'/g,"\\'")}',${p.price})"><span style="font-size:0.82rem;">${p.name}</span><span style="color:var(--primary);font-weight:700;font-size:0.82rem;">${fmt(p.price)} Kz</span></div>`).join('')}</div><table><thead><tr><th>Item</th><th>Qtd</th><th>Sub</th><th></th></tr></thead><tbody id="cartTb"></tbody></table><div style="text-align:right;font-size:0.85rem;color:var(--text-muted);">IVA: <span id="cartIva">0.00 Kz</span></div><div style="text-align:right;font-weight:700;font-size:1.1rem;color:var(--gold);">Total: <span id="cartTot">0.00 Kz</span></div><div class="form-row" style="margin-top:10px;"><div><label>Desconto (Kz)</label><input type="number" id="itemDisc" value="0" oninput="renderCart()"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="finalizeSale()">✅ Finalizar</button>`);
+  setTimeout(()=>{$('slPay').onchange=function(){document.getElementById('tpaRow').style.display=this.value.includes('TPA')?'block':'none';};},100);
+}
+
+async function finalizeSale(){
+  if(window.cart.length===0)return alert('Adicione itens!');const cl=v('slCl'),pro=v('slPro'),pay=v('slPay'),disc=parseFloat(v('itemDisc'))||0,iva=parseFloat(v('itemIva'))||0;
+  const fNum='FAT-'+today().replace(/-/g,'')+Math.floor(Math.random()*99999);const tpaCode=pay.includes('TPA')?v('slTpaCode'):null;if(pay.includes('TPA')&&!tpaCode)return alert('Insira o Código de Autorização do TPA!');
+  const{error}=await db.from('sales').insert({salon_id:SID,branch_id:getBranchId(),invoice_num:fNum,client_id:cl||null,professional_id:pro||null,items:window.cart,subtotal:window.cartSub,discount:disc,iva:iva,total:window.cartTotal,payment_method:pay,tpa_auth_code:tpaCode,date:today()});
+  if(error)return alert('Erro: '+error.message);
+  if(pay==='parcelado'&&cl){const cn=(await db.from('clients').select('name').eq('id',cl).single()).data?.name||'CF';await db.from('debts').insert({salon_id:SID,branch_id:getBranchId(),client_id:cl,client_name:cn,total:window.cartTotal,paid:0,status:'pendente'});}
+  closeMod();loadSales();alert('✅ Venda salva na nuvem!');
+}
+
+async function loadSales(){
+  let query = db.from('sales').select('*').eq('salon_id',SID).order('created_at',{ascending:false});
+  query = applyBranchFilter(query);
+  const{data}=await query;
+  $('slTb').innerHTML=(data||[]).map(s=>`<tr><td style="color:var(--primary);">${s.invoice_num}</td><td>${fmtD(s.date)}</td><td>${fmt(s.total)} Kz</td><td><button class="btn btn-primary btn-sm" onclick="viewSl('${s.id}')">🖨️</button></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhuma</td></tr>';
+}
+
+// --- VISUALIZAÇÃO E IMPRESSÃO DE FATURA (COM LOGO) ---
+async function viewSl(id){const{data:s}=await db.from('sales').select('*').eq('id',id).single();if(!s)return;const isTPA=s.payment_method&&s.payment_method.includes('TPA');openMod('Fatura '+s.invoice_num,`<div style="background:#fff;color:#1e293b;padding:30px;border-radius:12px;max-width:400px;margin:0 auto;font-size:13px;" id="recP"><div style="text-align:center;border-bottom:2px dashed #cbd5e1;padding-bottom:14px;margin-bottom:14px;"><img src="${LOGO}" style="width:65px;height:65px;border-radius:50%;object-fit:contain;margin-bottom:8px;border:2px solid #e2e8f0;"><h2 style="font-family:'Playfair Display';color:#2563eb;margin-bottom:4px;">${currentSalon.name}</h2><p style="font-size:11px;color:#64748b;">NIF: ${currentSalon.nif||'-'}</p><p style="font-size:11px;color:#64748b;">Fatura: ${s.invoice_num}<br>${fmtD(s.date)}</p></div>${s.items.map(i=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dotted #e2e8f0;"><span>${i.name} × ${i.qty}</span><span>${fmt(i.price*i.qty)} Kz</span></div>`).join('')}<div style="border-top:2px solid #1e293b;padding-top:8px;margin-top:10px;"><div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Subtotal:</span><span>${fmt(s.subtotal)} Kz</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Desconto:</span><span>-${fmt(s.discount)} Kz</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span>IVA (${s.iva||0}%):</span><span>${fmt((s.subtotal-s.discount)*(s.iva/100))} Kz</span></div><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;margin-top:6px;"><span>TOTAL:</span><span>${fmt(s.total)} Kz</span></div><div style="margin-top:8px;font-size:11px;"><strong>Pagamento:</strong> ${s.payment_method}</div>${isTPA?`<div style="margin-top:4px;padding:6px;background:#e0f2fe;border:1px solid #3b82f6;border-radius:4px;font-size:11px;"><strong>💳 PAGO VIA TPA</strong><br>Auth: ${s.tpa_auth_code||'N/A'}</div>`:''}</div><div id="qrCodeContainer" style="text-align:center;margin-top:15px;"></div><div style="text-align:center;margin-top:10px;padding-top:10px;border-top:2px dashed #cbd5e1;font-size:10px;color:#64748b;">Obrigado pela preferência!<br>IBAN: ${currentSalon.iban||''} | Express: ${currentSalon.express||''}</div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Fechar</button><button class="btn btn-primary" onclick="printDoc('a4')">🖨️ A4</button><button class="btn btn-warning" onclick="printDoc('80mm')">🧾 Térmica</button>`);setTimeout(()=>{try{new QRCode(document.getElementById("qrCodeContainer"),{text:"FAT:"+s.invoice_num+"|NIF:"+currentSalon.nif+"|TOT:"+s.total+"|DT:"+s.date,width:80,height:80,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});}catch(e){console.error("QR Error",e);}},200);}
+
+function printDoc(type){const content=document.getElementById('recP').innerHTML;const w=window.open('','','width='+(type==='80mm'?'350':'800')+',height=700');w.document.write(`<!DOCTYPE html><html><head><title>Recibo</title><style>body{font-family:Inter,sans-serif;padding:${type==='80mm'?'5px':'20px'};color:#1e293b;width:${type==='80mm'?'80mm':'100%'};margin:0 auto;}@media print{body{width:${type==='80mm'?'80mm':'100%'};margin:0;padding:${type==='80mm'?'2mm':'20px'};}}</style></head><body>${content}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);w.document.close();}
+
+async function openProformaModal(cliId){let queryClis = db.from('clients').select('*').eq('salon_id',SID).is('deleted_at',null);const[{data:pr},{data:cl}]=await Promise.all([db.from('products').select('*').eq('salon_id',SID),queryClis]);window.cart=[];window.cartTotal=0;openMod('📄 Nova Proforma',`<div class="form-row"><div><label>Cliente *</label><select id="pfCl"><option value="">-- Selecione --</option>${(cl||[]).map(c=>`<option value="${c.id}" ${c.id===cliId?'selected':''}>${c.name}</option>`).join('')}</select></div><div><label>IVA (%)</label><input type="number" id="itemIva" value="${currentSalon.iva||0}" oninput="renderCart()"></div></div><div style="max-height:120px;overflow-y:auto;border:1px solid var(--border-color);padding:6px;border-radius:8px;margin-bottom:12px;">${(pr||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid var(--border-light);cursor:pointer;" onclick="addToCart('${p.id}','${p.name.replace(/'/g,"\\'")}',${p.price})"><span style="font-size:0.82rem;">${p.name}</span><span style="color:var(--primary);font-weight:700;font-size:0.82rem;">${fmt(p.price)} Kz</span></div>`).join('')}</div><table><thead><tr><th>Item</th><th>Qtd</th><th>Sub</th><th></th></tr></thead><tbody id="cartTb"></tbody></table><div style="text-align:right;font-size:0.85rem;color:var(--text-muted);">IVA: <span id="cartIva">0.00 Kz</span></div><div style="text-align:right;font-weight:700;font-size:1.1rem;color:var(--gold);">Total: <span id="cartTot">0.00 Kz</span></div><div class="form-row" style="margin-top:10px;"><div><label>Desconto (Kz)</label><input type="number" id="itemDisc" value="0" oninput="renderCart()"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-primary" onclick="saveProforma()">💾 Salvar</button>`);}
+async function saveProforma(){const cl=v('pfCl');if(!cl)return alert('Selecione o cliente!');const pNum='PROF-'+today().replace(/-/g,'')+Math.floor(Math.random()*99999);await db.from('proformas').insert({salon_id:SID,branch_id:getBranchId(),prof_num:pNum,client_id:cl,items:window.cart,subtotal:window.cartSub,discount:parseFloat(v('itemDisc'))||0,iva:parseFloat(v('itemIva'))||0,total:window.cartTotal,status:'pending',date:today()});closeMod();loadProformas();alert('✅ Proforma salva!');}
+async function loadProformas(){let query = db.from('proformas').select('*').eq('salon_id',SID).order('created_at',{ascending:false}); query = applyBranchFilter(query); const{data}=await query;$('pfTb').innerHTML=(data||[]).map(p=>`<tr><td style="color:var(--secondary);">${p.prof_num}</td><td>${p.client_id?.substring(0,5)||'-'}</td><td>${fmt(p.total)} Kz</td><td>${p.status==='pending'?`<button class="btn btn-success btn-sm" onclick="convPf('${p.id}')">🧾 Converter</button>`:'<span class="badge badge-success">Convertida</span>'}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhuma</td></tr>';}
+async function convPf(id){if(!confirm('Converter em Venda?'))return;await db.from('proformas').update({status:'converted'}).eq('id',id);loadProformas();}
+
+// --- FINANCEIRO ---
+async function loadDebts(){let query = db.from('debts').select('*').eq('salon_id',SID); query = applyBranchFilter(query); const{data}=await query;$('dbTb').innerHTML=(data||[]).map(d=>{const bal=d.total-(d.paid||0);return`<tr><td><strong>${d.client_name||'-'}</strong></td><td>${fmt(d.total)} Kz</td><td style="color:var(--success)">${fmt(d.paid||0)} Kz</td><td style="font-weight:700;color:${bal>0?'var(--danger)':'var(--success)'}">${fmt(bal)} Kz</td><td>${d.status!=='pago'?`<button class="btn btn-success btn-sm" onclick="payDebt('${d.id}')">💵</button>`:''}</td></tr>`;}).join('')||'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhuma</td></tr>';}
+async function payDebt(id){const d=(await db.from('debts').select('*').eq('id',id).single()).data;if(!d)return;const bal=d.total-(d.paid||0);openMod('💵 Receber',`<p>Saldo: <strong style="color:var(--danger);">${fmt(bal)} Kz</strong></p><div class="form-row" style="margin-top:10px;"><div><label>Valor *</label><input type="number" id="payDbVal" value="${bal}"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="confPayDb('${id}')">✅</button>`);}
+async function confPayDb(id){const val=parseFloat(v('payDbVal'));if(!val||val<=0)return alert('Inválido!');const d=(await db.from('debts').select('*').eq('id',id).single()).data;const np=(d.paid||0)+val;const ns=np>=d.total?'pago':'pendente';await db.from('debts').update({paid:np,status:ns}).eq('id',id);closeMod();loadDebts();}
+
+async function loadExps(){const{data}=await db.from('expenses').select('*').eq('salon_id',SID);$('exTb').innerHTML=(data||[]).map(e=>`<tr><td><span class="badge badge-primary">${e.type}</span></td><td>${fmt(e.total)} Kz</td><td><span class="badge ${e.status==='pago'?'badge-success':'badge-warning'}">${e.status==='pago'?'Pago':'Pendente'}</span></td><td>${e.status==='pago'?`<button class="btn btn-gold btn-sm" onclick="printExpReceipt('${e.id}')">🧾 Recibo</button>`:`<button class="btn btn-warning btn-sm" onclick="payExp('${e.id}')">💸</button>`} <button class="btn btn-danger btn-sm" onclick="delExp('${e.id}')">🗑️</button></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhuma</td></tr>';}
+function openExpModal(){openMod('💸 Nova Despesa',`<div class="form-row"><div><label>Tipo *</label><select id="expTy"><option>💧 Água</option><option>⚡ Luz</option><option>🌐 Internet</option><option>🏠 Aluguel</option><option>👷 Salário</option><option>📝 Outro</option></select></div><div><label>Valor *</label><input type="number" id="expVl"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-danger" onclick="saveExp()">💾</button>`);}
+async function saveExp(){const ty=v('expTy'),vl=parseFloat(v('expVl'));if(!vl)return alert('Valor!');const rNum='REC-'+today().replace(/-/g,'')+Math.floor(Math.random()*99999);await db.from('expenses').insert({salon_id:SID,branch_id:getBranchId(),type:ty,total:vl,paid:0,status:'pendente',receipt_number:rNum});closeMod();loadExps();}
+async function payExp(id){const e=(await db.from('expenses').select('*').eq('id',id).single()).data;if(!e)return;openMod('💸 Pagar',`<p>Valor: <strong style="color:var(--danger);">${fmt(e.total)} Kz</strong></p><div class="form-row" style="margin-top:10px;"><div><label>Valor a Pagar *</label><input type="number" id="payExVl" value="${e.total}"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="confPayExp('${id}')">✅</button>`);}
+async function confPayExp(id){const val=parseFloat(v('payExVl'));if(!val||val<=0)return alert('Inválido!');await db.from('expenses').update({paid:val,status:'pago'}).eq('id',id);closeMod();loadExps();}
+async function delExp(id){if(!confirm('Excluir?'))return;await db.from('expenses').delete().eq('id',id);loadExps();}
+
+// --- RECIBOS (COM LOGO) ---
+async function printExpReceipt(id){const e=(await db.from('expenses').select('*').eq('id',id).single()).data;if(!e||e.status!=='pago')return alert('Apenas despesas pagas!');const content=`<div style="text-align:center;border-bottom:2px dashed #cbd5e1;padding-bottom:12px;margin-bottom:12px;"><img src="${LOGO}" style="width:50px;height:50px;border-radius:50%;object-fit:contain;margin-bottom:6px;"><h2 style="font-family:'Playfair Display';color:#2563eb;margin:0;">${currentSalon.name}</h2><p style="font-size:10px;color:#64748b;">NIF: ${currentSalon.nif||'-'}</p><p style="font-size:11px;font-weight:700;">RECIBO DE PAGAMENTO</p><p style="font-size:10px;color:#64748b;">Nº: ${e.receipt_number||e.id.substring(0,8)}<br>Data: ${fmtD(e.created_at?.split('T')[0])}</p></div><div style="margin-bottom:12px;"><p><strong>Tipo de Despesa:</strong> ${e.type}</p><p><strong>Valor Pago:</strong> ${fmt(e.total)} Kz</p><p><strong>Pago em:</strong> ${fmtD(e.created_at?.split('T')[0])}</p></div><div style="text-align:center;margin-top:20px;border-top:1px dashed #cbd5e1;padding-top:10px;font-size:10px;color:#64748b;">Documento emitido electronicamente<br>${currentSalon.name}</div>`;const w=window.open('','','width=350,height=600');w.document.write(`<!DOCTYPE html><html><head><title>Recibo</title><style>body{font-family:Inter,sans-serif;padding:10px;color:#1e293b;width:80mm;margin:0 auto;}</style></head><body>${content}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);w.document.close();}
+
+// --- FOLHA COM IMPRESSÃO (COM LOGO) ---
+async function loadPayroll(){const month=v('payMonth');if(!month)return alert('Mês!');const[{data:pros},{data:sales}]=await Promise.all([db.from('professionals').select('*').eq('salon_id',SID),db.from('sales').select('*').eq('salon_id',SID)]);const ms=(sales||[]).filter(s=>s.date.startsWith(month));let html=`<h3 style="color:var(--primary);">Folha: ${month}</h3><table><thead><tr><th>Funcionária</th><th>Base</th><th>Vendas</th><th>Comissão</th><th>Total</th><th>Ações</th></tr></thead><tbody>`;let tBase=0,tCom=0,tPay=0;(pros||[]).forEach(p=>{const ps=ms.filter(s=>s.professional_id===p.id);const st=ps.reduce((a,b)=>a+b.total,0);const cv=st*(p.commission/100);const tr=(p.base_salary||0)+cv;tBase+=(p.base_salary||0);tCom+=cv;tPay+=tr;html+=`<tr><td><strong>${p.name}</strong></td><td>${fmt(p.base_salary||0)} Kz</td><td>${fmt(st)} Kz (${ps.length})</td><td style="color:var(--success);">${fmt(cv)} Kz</td><td style="font-weight:700;color:var(--gold);">${fmt(tr)} Kz</td><td><button class="btn btn-primary btn-sm" onclick="printPayroll('${p.name}',${p.base_salary||0},${cv},${tr},'${month}')">🧾</button></td></tr>`;});html+=`<tr style="background:rgba(59,130,246,0.1);font-weight:700;"><td>TOTAIS</td><td>${fmt(tBase)} Kz</td><td>-</td><td>${fmt(tCom)} Kz</td><td style="color:var(--gold);">${fmt(tPay)} Kz</td><td></td></tr></tbody></table>`;$('payOut').innerHTML=html;}
+
+function printPayroll(name, base, com, total, month){const content=`<div style="text-align:center;border-bottom:2px dashed #cbd5e1;padding-bottom:12px;margin-bottom:12px;"><img src="${LOGO}" style="width:50px;height:50px;border-radius:50%;object-fit:contain;margin-bottom:6px;"><h2 style="font-family:'Playfair Display';color:#2563eb;margin:0;">${currentSalon.name}</h2><p style="font-size:10px;color:#64748b;">NIF: ${currentSalon.nif||'-'}</p><p style="font-size:11px;font-weight:700;">RECIBO DE SALÁRIO</p><p style="font-size:10px;color:#64748b;">Mês Ref: ${month}</p></div><div style="margin-bottom:12px;"><p><strong>Funcionária:</strong> ${name}</p><p><strong>Salário Base:</strong> ${fmt(base)} Kz</p><p><strong>Comissões:</strong> ${fmt(com)} Kz</p><hr style="border-style:dashed;margin:8px 0;"><p style="font-size:14px;font-weight:700;">TOTAL LÍQUIDO: ${fmt(total)} Kz</p></div><div style="text-align:center;margin-top:20px;border-top:1px dashed #cbd5e1;padding-top:10px;font-size:10px;color:#64748b;">Documento emitido electronicamente<br>${currentSalon.name}</div>`;const w=window.open('','','width=350,height=600');w.document.write(`<!DOCTYPE html><html><head><title>Recibo</title><style>body{font-family:Inter,sans-serif;padding:10px;color:#1e293b;width:80mm;margin:0 auto;}</style></head><body>${content}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);w.document.close();}
+
+// --- RELATÓRIOS ---
+function loadReports(){if(!$('repStart').value){const n=new Date();$('repStart').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-01';$('repEnd').value=today();}}
+async function generateReport(){const start=v('repStart'),end=v('repEnd');if(!start||!end)return alert('Período!');const[{data:sales},{data:expenses}]=await Promise.all([db.from('sales').select('*').eq('salon_id',SID).gte('date',start).lte('date',end),db.from('expenses').select('*').eq('salon_id',SID).gte('created_at',start).lte('created_at',end+'T23:59:59')]);const sl=sales||[];const ex=expenses||[];const tRev=sl.reduce((a,s)=>a+s.total,0);const tExp=ex.filter(e=>e.status==='pago').reduce((a,e)=>a+e.total,0);const svcCount={};sl.forEach(s=>{if(s.items&&Array.isArray(s.items)){s.items.forEach(i=>{svcCount[i.name]=(svcCount[i.name]||0)+i.qty;});}});const topSvc=Object.entries(svcCount).sort((a,b)=>b[1]-a[1]).slice(0,5);$('repOut').innerHTML=`<h3 style="color:var(--primary);">Relatório: ${fmtD(start)} a ${fmtD(end)}</h3><div class="kpi-grid" style="margin-top:16px;"><div class="kpi-card"><div class="kpi-label">Receita</div><div class="kpi-value" style="color:var(--success);">${fmt(tRev)} Kz</div></div><div class="kpi-card"><div class="kpi-label">Despesas</div><div class="kpi-value" style="color:var(--danger);">${fmt(tExp)} Kz</div></div><div class="kpi-card"><div class="kpi-label">Lucro</div><div class="kpi-value" style="color:var(--gold);">${fmt(tRev-tExp)} Kz</div></div></div><div class="card" style="margin-top:16px;"><h3>🔥 Top Serviços</h3>${topSvc.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border-light);"><span>${s[0]}</span><span class="badge badge-primary">${s[1]} un</span></div>`).join('')||'<p style="color:var(--text-muted);text-align:center;">Sem dados</p>'}</div>`;}
+
+// --- CONFIG ---
+function loadCfg(){$('cfgName').value=currentSalon.name||'';$('cfgNif').value=currentSalon.nif||'';$('cfgExp').value=currentSalon.express||'';$('cfgWapp').value=currentSalon.wapp||'';$('cfgIban').value=currentSalon.iban||'';$('cfgAddr').value=currentSalon.address||'';$('cfgIva').value=currentSalon.iva||0;$('cfgMeth').value=(currentSalon.payment_methods||[]).join(', ');if(currentUser.role==='admin')loadUsersList();}
+
+async function loadUsersList(){
+  const { data } = await db.from('users').select('*, branches(name)').eq('salon_id', SID);
+  const html = (data||[]).map(u => `
+    <tr>
+      <td><strong>${u.name}</strong></td>
+      <td><span class="badge badge-primary">${u.username}</span></td>
+      <td>${u.branches?.name || 'Matriz'}</td>
+      <td><span class="badge ${u.role==='admin'?'badge-gold':'badge-success'}">${u.role==='admin'?'Gestor':'Funcionária'}</span></td>
+      <td>${u.role !== 'admin' ? `<button class="btn btn-warning btn-sm" onclick="resetUserPass('${u.id}')">🔑 Resetar</button>` : ''}</td>
+    </tr>
+  `).join('');
+  if($('userListCfg')) $('userListCfg').innerHTML = `<table><thead><tr><th>Nome</th><th>Login</th><th>Filial</th><th>Nível</th><th>Ações</th></tr></thead><tbody>${html}</tbody></table>`;
+}
+
+async function resetUserPass(id){
+  const newPass = prompt("Digite a nova senha para este usuário:");
+  if(!newPass) return;
+  await db.from('users').update({ password_hash: hash(newPass) }).eq('id', id);
+  alert('✅ Senha resetada com sucesso!');
+}
+
+async function saveCfg(){const upd={name:v('cfgName'),nif:v('cfgNif'),express:v('cfgExp'),wapp:v('cfgWapp'),iban:v('cfgIban'),address:v('cfgAddr'),iva:parseFloat(v('cfgIva'))||0,payment_methods:v('cfgMeth').split(',').map(m=>m.trim()).filter(m=>m)};const{data}=await db.from('salons').update(upd).eq('id',SID).select().single();if(data)currentSalon=data;alert('✅ Salvo!');}
+
+checkAuth();
+</script>
+</body>
+</html>
