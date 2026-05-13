@@ -116,13 +116,10 @@ function openBranchModal(){openMod('➕ Nova Filial',`<div class="form-row"><div
 async function saveBranch(){const n=v('brn');if(!n)return alert('Nome!');const { error } = await db.from('branches').insert({salon_id:SID,name:n,address:v('bra')}); if(error) return alert('Erro: '+error.message); closeMod();loadBranches();}
 async function delBranch(id){if(!confirm('Excluir?'))return;await db.from('branches').delete().eq('id',id);loadBranches();}
 
-// --- CLIENTES COM FLUXO INTEGRADO ---
+// --- CLIENTES ---
 async function loadCli(){ let query = db.from('clients').select('*').eq('salon_id',SID).is('deleted_at',null).order('created_at',{ascending:false}); query = applyBranchFilter(query); const {data} = await query; const cl=data||[];const q=(v('srcCl')||'').toLowerCase();const f=q?cl.filter(c=>c.name.toLowerCase().includes(q)):cl; let branchNames={};if(isAdmin()){const{data:br}=await db.from('branches').select('*').eq('salon_id',SID);(br||[]).forEach(b=>branchNames[b.id]=b.name);} $('clTb').innerHTML=f.map(c=>`<tr><td><strong>${c.name}</strong></td><td>${c.phone||'-'}</td><td>${c.email||'-'}</td>${isAdmin()?`<td><span class="badge badge-primary">${branchNames[c.branch_id]||'Matriz'}</span></td>`:''}<td><button class="btn btn-success btn-sm" onclick="openSaleModal('${c.id}')">🧾</button> <button class="btn btn-primary btn-sm" onclick="openProformaModal('${c.id}')">📄</button> <button class="btn btn-danger btn-sm" onclick="delCli('${c.id}')">🗑️</button></td></tr>`).join('')||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum</td></tr>`;}
-
 function openCliModal(){openMod('➕ Novo Cliente',`<div class="form-row"><div><label>Nome *</label><input id="cn"></div><div><label>Telefone *</label><input id="cp"></div></div><div class="form-row"><div><label>Email</label><input type="email" id="ce"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success btn-sm" onclick="saveCli('none')">💾 Salvar</button><button class="btn btn-primary" onclick="saveCli('sale')">🧾 Salvar e Vender</button><button class="btn btn-warning" onclick="saveCli('proforma')">📄 Salvar e Proforma</button>`);}
-
 async function saveCli(action){const n=v('cn'),p=v('cp');if(!n||!p)return alert('Preencha!');const { data, error } = await db.from('clients').insert({salon_id:SID,branch_id:getBranchId(),name:n,phone:p,email:v('ce')}).select().single(); if(error) return alert('Erro ao salvar cliente: '+error.message); if(action === 'sale'){ closeMod(); openSaleModal(data.id); } else if(action === 'proforma'){ closeMod(); openProformaModal(data.id); } else { closeMod(); loadCli(); }}
-
 async function delCli(id){if(!confirm('Mover para lixeira?'))return;const { error } = await db.from('clients').update({deleted_at: new Date().toISOString()}).eq('id',id); if(error) return alert('Erro: '+error.message); loadCli();}
 async function openTrashCli(){ const { data } = await db.from('clients').select('*').eq('salon_id',SID).not('deleted_at', 'is', null); const html = (data||[]).map(c => `<tr><td>${c.name}</td><td>${c.phone||'-'}</td><td>${fmtD(c.deleted_at?.split('T')[0])}</td><td><button class="btn btn-success btn-sm" onclick="restoreCli('${c.id}')">♻️ Restaurar</button></td></tr>`).join(''); openMod('🗑️ Lixeira de Clientes',`<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;">Clientes apagados aparecem aqui.</p><table><thead><tr><th>Nome</th><th>Telefone</th><th>Apagado em</th><th>Ação</th></tr></thead><tbody>${html || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Lixeira vazia</td></tr>'}</tbody></table>`,`<button class="btn btn-outline" onclick="closeMod()">Fechar</button>`); }
 async function restoreCli(id){const { error } = await db.from('clients').update({deleted_at: null}).eq('id',id); if(error) return alert('Erro: '+error.message); openTrashCli(); loadCli();}
@@ -131,20 +128,15 @@ async function loadProds(){const{data}=await db.from('products').select('*').eq(
 function openProducModal(pid){const p=pid?1:null;openMod(p?'✏️ Editar':'➕ Novo',`<div class="form-row"><div><label>Nome *</label><input id="pn"></div><div><label>Categoria</label><input id="pcat"></div></div><div class="form-row"><div><label>Preço *</label><input type="number" id="pprice"></div></div>`,`<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="saveProd('${pid||''}')">💾</button>`);}
 async function saveProd(eid){const n=v('pn'),pr=parseFloat(v('pprice'));if(!n||!pr)return alert('Nome e preço!');let error;if(eid){({error}=await db.from('products').update({name:n,category:v('pcat'),price:pr}).eq('id',eid));}else{({error}=await db.from('products').insert({salon_id:SID,name:n,category:v('pcat'),price:pr}));} if(error) return alert('Erro: '+error.message); closeMod();loadProds();}
 
-// --- PROFISSIONAIS CORRIGIDO ---
+// --- PROFISSIONAIS ---
 async function loadPros(){const[{data:pr},{data:br}]=await Promise.all([db.from('professionals').select('*').eq('salon_id',SID),db.from('branches').select('*').eq('salon_id',SID)]);$('proTb').innerHTML=(pr||[]).map(p=>{const b=(br||[]).find(x=>x.id===p.branch_id);return`<tr><td><strong>${p.name}</strong></td><td>${b?.name||'-'}</td><td><span class="badge badge-primary">${p.username||'-'}</span></td><td>${p.payment_method||'Dinheiro'}</td><td style="color:var(--danger)">${fmt(p.deductions||0)} Kz</td><td><button class="btn btn-gold btn-sm" onclick="addLoanPro('${p.id}', ${p.deductions||0})">💰</button> <button class="btn btn-outline btn-sm" onclick="editProModal('${p.id}')">✏️</button> <button class="btn btn-danger btn-sm" onclick="delPro('${p.id}','${p.username}')">🗑️</button></td></tr>`;}).join('')||'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum</td></tr>';}
-
 async function openProModal(){ const { data: branches } = await db.from('branches').select('*').eq('salon_id', SID); const branchOpts = (branches||[]).map(b => `<option value="${b.id}">${b.name}</option>`).join(''); openMod('➕ Novo Funcionário(a)',` <div class="form-row"><div><label>Nome *</label><input id="pron"></div><div><label>Filial</label><select id="probr">${branchOpts}</select></div></div> <div class="form-row"><div><label>Login *</label><input id="prou"></div><div><label>Senha *</label><input type="password" id="prop"></div></div> <div class="form-row"><div><label>Salário Base</label><input type="number" id="prosal" value="0"></div><div><label>Comissão (%)</label><input type="number" id="procom" value="40"></div></div> <div class="form-row"><div><label>Forma de Pagamento</label><select id="propay"><option>Dinheiro</option><option>Transferência Bancária</option><option>TPA</option></select></div><div><label>Descontos/Empréstimos (Kz)</label><input type="number" id="prodesc" value="0"></div></div>`, `<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="savePro()">💾</button>`); }
-
 async function savePro(){ const n=v('pron'),u=v('prou'),p=v('prop'),c=parseFloat(v('procom'))||0,sal=parseFloat(v('prosal'))||0,branchId=v('probr'),pay=v('propay'),desc=parseFloat(v('prodesc'))||0; if(!n||!u||!p)return alert('Preencha!'); const{data:pro, error: err1}=await db.from('professionals').insert({salon_id:SID,branch_id:branchId||null,name:n,username:u,base_salary:sal,commission:c,payment_method:pay,deductions:desc}).select().single(); if(err1) return alert('Erro: '+err1.message); if(pro){const { error: err2 } = await db.from('users').insert({salon_id:SID,branch_id:branchId||null,name:n,username:u,password_hash:hash(p),role:'staff'});if(err2) alert('Aviso: Salvo, mas erro ao criar login: '+err2.message);} closeMod();loadPros(); }
-
 async function editProModal(id){ const { data: p } = await db.from('professionals').select('*').eq('id', id).single(); if(!p) return; const { data: branches } = await db.from('branches').select('*').eq('salon_id', SID); const branchOpts = (branches||[]).map(b => `<option value="${b.id}" ${b.id===p.branch_id?'selected':''}>${b.name}</option>`).join(''); openMod('✏️ Editar Funcionário(a)',` <input type="hidden" id="proIdEdit" value="${p.id}"> <div class="form-row"><div><label>Nome *</label><input id="pron" value="${p.name}"></div><div><label>Filial</label><select id="probr">${branchOpts}</select></div></div> <div class="form-row"><div><label>Salário Base</label><input type="number" id="prosal" value="${p.base_salary||0}"></div><div><label>Comissão (%)</label><input type="number" id="procom" value="${p.commission||0}"></div></div> <div class="form-row"><div><label>Forma de Pagamento</label><select id="propay"><option ${p.payment_method==='Dinheiro'?'selected':''}>Dinheiro</option><option ${p.payment_method==='Transferência Bancária'?'selected':''}>Transferência Bancária</option><option ${p.payment_method==='TPA'?'selected':''}>TPA</option></select></div><div><label>Descontos Atuais (Kz)</label><input type="number" id="prodesc" value="${p.deductions||0}"></div></div>`, `<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="saveEditPro()">💾 Salvar</button>`); }
 async function saveEditPro(){ const id=v('proIdEdit'); const { error } = await db.from('professionals').update({ name:v('pron'), branch_id:v('probr')||null, base_salary:parseFloat(v('prosal'))||0, commission:parseFloat(v('procom'))||0, payment_method:v('propay'), deductions:parseFloat(v('prodesc'))||0 }).eq('id', id); if(error) return alert('Erro: '+error.message); closeMod(); loadPros(); }
-
 async function addLoanPro(id, currentDed){ const amt = prompt("Valor do Empréstimo/Desconto a adicionar:"); if(!amt || isNaN(amt)) return; const newDed = currentDed + parseFloat(amt); const { error } = await db.from('professionals').update({ deductions: newDed }).eq('id', id); if(error) return alert('Erro'); printLoanReceipt(id, parseFloat(amt)); loadPros(); }
 async function printLoanReceipt(id, amt){ const { data: p } = await db.from('professionals').select('name, deductions').eq('id', id).single(); const content=`<div style="text-align:center;border-bottom:2px dashed #cbd5e1;padding-bottom:12px;margin-bottom:12px;"><img src="${LOGO}" style="width:50px;height:50px;border-radius:50%;object-fit:contain;margin-bottom:6px;"><h2 style="font-family:'Playfair Display';color:#2563eb;margin:0;">${currentSalon.name}</h2><p style="font-size:11px;font-weight:700;">RECIBO DE EMPRÉSTIMO / DESCONTO</p><p style="font-size:10px;color:#64748b;">Data: ${fmtD(today())}</p></div><div style="margin-bottom:12px;"><p><strong>Funcionário(a):</strong> ${p.name}</p><p style="font-size:16px;font-weight:700;color:#dc2626;">Valor Descontado: ${fmt(amt)} Kz</p><p style="font-size:12px;color:#64748b;">Total Acumulado: ${fmt(p.deductions)} Kz</p></div>`; const w=window.open('','','width=350,height=600');w.document.write(`<!DOCTYPE html><html><head><title>Recibo</title><style>body{font-family:Inter,sans-serif;padding:10px;color:#1e293b;width:80mm;margin:0 auto;}</style></head><body>${content}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);w.document.close(); }
-
-async function delPro(id, username){ if(!confirm('Excluir Funcionário e Login?')) return; const { error: err1 } = await db.from('users').delete().eq('username', username).eq('salon_id', SID); const { error: err2 } = await db.from('professionals').delete().eq('id', id); if(err2) return alert('Erro ao excluir: '+err2.message+'\n\nDica: Se este funcionário tem vendas registradas no nome dele, o sistema de banco de dados proíbe a exclusão para não perder o histórico. Você pode apenas editar o cadastro dele se for o caso.'); if(err1 && !err2) alert('Funcionário deletado, mas o login não foi encontrado.'); loadPros(); }
+async function delPro(id, username){ if(!confirm('Excluir Funcionário e Login?')) return; const { error: err1 } = await db.from('users').delete().eq('username', username).eq('salon_id', SID); const { error: err2 } = await db.from('professionals').delete().eq('id', id); if(err2) return alert('Erro ao excluir: '+err2.message+'\n\nDica: Se este funcionário tem vendas registradas, o sistema proíbe a exclusão para não perder o histórico. Apenas edite o cadastro.'); if(err1 && !err2) alert('Funcionário deletado, mas o login não foi encontrado.'); loadPros(); }
 
 window.cart=[];window.cartTotal=0;window.cartSub=0;
 function addToCart(id,n,p){const e=window.cart.find(x=>x.id===id);if(e)e.qty++;else window.cart.push({id,name:n,price:p,qty:1});renderCart();}
@@ -198,9 +190,76 @@ function printPayroll(name, base, com, desc, total, month, payMethod){const cont
 function loadReports(){if(!$('repStart').value){const n=new Date();$('repStart').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-01';$('repEnd').value=today();}}
 async function generateReport(){const start=v('repStart'),end=v('repEnd');if(!start||!end)return alert('Período!');const[{data:sales},{data:expenses}]=await Promise.all([db.from('sales').select('*').eq('salon_id',SID).gte('date',start).lte('date',end),db.from('expenses').select('*').eq('salon_id',SID).gte('created_at',start).lte('created_at',end+'T23:59:59')]);const sl=sales||[];const ex=expenses||[];const tRev=sl.reduce((a,s)=>a+s.total,0);const tExp=ex.filter(e=>e.status==='pago').reduce((a,e)=>a+e.total,0);const svcCount={};sl.forEach(s=>{if(s.items&&Array.isArray(s.items)){s.items.forEach(i=>{svcCount[i.name]=(svcCount[i.name]||0)+i.qty;});}});const topSvc=Object.entries(svcCount).sort((a,b)=>b[1]-a[1]).slice(0,5);$('repOut').innerHTML=`<h3 style="color:var(--primary);">Relatório: ${fmtD(start)} a ${fmtD(end)}</h3><div class="kpi-grid" style="margin-top:16px;"><div class="kpi-card"><div class="kpi-label">Receita</div><div class="kpi-value" style="color:var(--success);">${fmt(tRev)} Kz</div></div><div class="kpi-card"><div class="kpi-label">Despesas</div><div class="kpi-value" style="color:var(--danger);">${fmt(tExp)} Kz</div></div><div class="kpi-card"><div class="kpi-label">Lucro</div><div class="kpi-value" style="color:var(--gold);">${fmt(tRev-tExp)} Kz</div></div></div><div class="card" style="margin-top:16px;"><h3>🔥 Top Serviços</h3>${topSvc.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border-light);"><span>${s[0]}</span><span class="badge badge-primary">${s[1]} un</span></div>`).join('')||'<p style="color:var(--text-muted);text-align:center;">Sem dados</p>'}</div>`;}
 
+// --- CONFIG ---
 function loadCfg(){$('cfgName').value=currentSalon.name||'';$('cfgNif').value=currentSalon.nif||'';$('cfgExp').value=currentSalon.express||'';$('cfgWapp').value=currentSalon.wapp||'';$('cfgIban').value=currentSalon.iban||'';$('cfgAddr').value=currentSalon.address||'';$('cfgIva').value=currentSalon.iva||0;$('cfgMeth').value=(currentSalon.payment_methods||[]).join(', ');if(isAdmin())loadUsersList();}
-async function loadUsersList(){ const { data } = await db.from('users').select('*, branches(name)').eq('salon_id', SID); const html = (data||[]).map(u => ` <tr> <td><strong>${u.name}</strong></td> <td><span class="badge badge-primary">${u.username}</span></td> <td>${u.branches?.name || 'Matriz'}</td> <td><span class="badge ${u.role==='admin'?'badge-gold':'badge-success'}">${u.role==='admin'?'Gestor':'Funcionário(a)'}</span></td> <td>${u.role !== 'admin' ? `<button class="btn btn-warning btn-sm" onclick="resetUserPass('${u.id}')">🔑 Resetar</button>` : ''}</td> </tr> `).join(''); if($('userListCfg')) $('userListCfg').innerHTML = `<table><thead><tr><th>Nome</th><th>Login</th><th>Filial</th><th>Nível</th><th>Ações</th></tr></thead><tbody>${html}</tbody></table>`; }
+
+async function loadUsersList(){ 
+  const { data } = await db.from('users').select('*, branches(name)').eq('salon_id', SID); 
+  const html = (data||[]).map(u => ` 
+    <tr> 
+      <td><strong>${u.name}</strong></td> 
+      <td><span class="badge badge-primary">${u.username}</span></td> 
+      <td>${u.branches?.name || 'Matriz'}</td> 
+      <td><span class="badge ${u.role==='admin'?'badge-gold':'badge-success'}">${u.role==='admin'?'Gestor':'Funcionário(a)'}</span></td> 
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="editUserModal('${u.id}')">✏️ Editar</button>
+        ${u.id !== currentUser.id ? `<button class="btn btn-danger btn-sm" onclick="delUser('${u.id}')">🗑️</button>` : ''}
+        ${u.role !== 'admin' ? `<button class="btn btn-warning btn-sm" onclick="resetUserPass('${u.id}')">🔑</button>` : ''}
+      </td> 
+    </tr> 
+  `).join(''); 
+  if($('userListCfg')) $('userListCfg').innerHTML = `<table><thead><tr><th>Nome</th><th>Login</th><th>Filial</th><th>Nível</th><th>Ações</th></tr></thead><tbody>${html}</tbody></table>`; 
+}
+
+async function editUserModal(id){
+  const { data: u } = await db.from('users').select('*').eq('id', id).single();
+  if(!u) return;
+  const { data: branches } = await db.from('branches').select('*').eq('salon_id', SID);
+  const branchOpts = (branches||[]).map(b => `<option value="${b.id}" ${b.id===u.branch_id?'selected':''}>${b.name}</option>`).join('');
+  
+  openMod('✏️ Editar Usuário', `
+    <input type="hidden" id="editUserId" value="${u.id}">
+    <div class="form-row">
+      <div><label>Nome</label><input id="editUserName" value="${u.name}"></div>
+      <div><label>Login (Username)</label><input id="editUserUsername" value="${u.username}" readonly style="opacity:0.6;cursor:not-allowed;" title="O login não pode ser alterado"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Filial</label><select id="editUserBranch"><option value="">Matriz</option>${branchOpts}</select></div>
+      <div><label>Nível de Acesso</label><select id="editUserRole"><option value="admin" ${u.role==='admin'?'selected':''}>👑 Gestor</option><option value="staff" ${u.role==='staff'?'selected':''}>💅 Funcionário(a)</option></select></div>
+    </div>
+    ${u.role === 'admin' ? '<p style="font-size:0.75rem;color:var(--warning);">⚠️ Atenção: Se mudar o nível para Funcionário, este usuário perderá o acesso a várias partes do sistema.</p>' : ''}
+  `, `<button class="btn btn-outline" onclick="closeMod()">Cancelar</button><button class="btn btn-success" onclick="saveEditUser()">💾 Salvar</button>`);
+}
+
+async function saveEditUser(){
+  const id = v('editUserId');
+  const name = v('editUserName');
+  const branch_id = v('editUserBranch');
+  const role = v('editUserRole');
+  
+  // Segurança: Não deixa o Gestor tirar o próprio acesso de admin
+  if(id === currentUser.id && role !== 'admin'){
+    return alert('Você não pode remover seu próprio acesso de Gestor!');
+  }
+
+  const { error } = await db.from('users').update({ name, branch_id: branch_id || null, role }).eq('id', id);
+  if(error) return alert('Erro ao atualizar: '+error.message);
+  
+  alert('✅ Usuário atualizado!');
+  closeMod(); 
+  loadUsersList();
+}
+
+async function delUser(id){
+  if(id === currentUser.id) return alert('Você não pode excluir seu próprio usuário!');
+  if(!confirm('Excluir o acesso deste usuário ao sistema?\n\n(O cadastro dele na aba Funcionários continuará existindo, apenas o login será apagado)')) return;
+  const { error } = await db.from('users').delete().eq('id', id);
+  if(error) return alert('Erro ao excluir: '+error.message);
+  loadUsersList();
+}
+
 async function resetUserPass(id){ const newPass = prompt("Digite a nova senha:"); if(!newPass) return; const { error } = await db.from('users').update({ password_hash: hash(newPass) }).eq('id', id); if(error) return alert('Erro: '+error.message); alert('✅ Senha resetada!'); }
+
 async function saveCfg(){const upd={name:v('cfgName'),nif:v('cfgNif'),express:v('cfgExp'),wapp:v('cfgWapp'),iban:v('cfgIban'),address:v('cfgAddr'),iva:parseFloat(v('cfgIva'))||0,payment_methods:v('cfgMeth').split(',').map(m=>m.trim()).filter(m=>m)};const{data,error}=await db.from('salons').update(upd).eq('id',SID).select().single();if(error) return alert('Erro: '+error.message); if(data)currentSalon=data;alert('✅ Salvo!');}
 
 checkAuth();
